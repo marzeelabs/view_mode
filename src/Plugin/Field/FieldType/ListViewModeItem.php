@@ -19,7 +19,7 @@ use Drupal\Core\TypedData\OptionsProviderInterface;
  *
  * @FieldType(
  *   id = "list_view_mode",
- *   label = @Translation("List (view mode)"),
+ *   label = @Translation("View mode"),
  *   description = @Translation("This field stores view modes"),
  *   default_widget = "view_mode_select_widget",
  *   default_formatter = "view_mode_default_formatter"
@@ -64,9 +64,10 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
   public function getPossibleOptions(AccountInterface $account = NULL) {
     $options = $this->getOptions();
 
-    foreach ($this->getSetting('view_modes') as $view_mode => $status) {
-      if (!$status) {
-        unset($options[$view_mode]);
+    $view_modes = $this->getSetting('view_modes');
+    foreach ($options as $key => $value) {
+      if (!isset($view_modes[$key])) {
+        unset($options[$key]);
       }
     }
 
@@ -94,8 +95,12 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
     return $this->getPossibleOptions($account);
   }
 
-  // @todo add support for entity_type
-  protected function getOptions($entity_type = 'node') {
+  /**
+   * Return view modes that can be selected. This depends on the entity this field is part of, currently no view modes from other entity types are selectable.
+   * 
+   * @return [type] [description]
+   */
+  protected function getOptions() {
     $entity_manager = \Drupal::entityManager();
     $entity_type = $this->getEntity()->getEntityType()->get('id');
 
@@ -124,15 +129,12 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
 
     $element = array();
 
-    // @todo make this entity type agnostic
-    $entity_type = 'node';
-
     $element['view_modes'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Enabled view modes'),
       '#description' => t('Select the view modes that can be selected for this field.'),
       '#default_value' => $this->getSetting('view_modes'),
-      '#options' => $this->getOptions($entity_type),
+      '#options' => $this->getOptions(),
     );
 
     return $element;
