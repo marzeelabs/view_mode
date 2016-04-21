@@ -7,30 +7,12 @@
 
 namespace Drupal\view_mode\Plugin\Field\FieldType;
 
-use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\TypedData\DataDefinition;
-
-
-
-// use Drupal\Component\Utility\Random;
-// use Drupal\Core\Field\FieldDefinitionInterface;
-// use Drupal\Core\Field\FieldItemBase;
-// use Drupal\Core\Field\FieldStorageDefinitionInterface;
-
-
-// use Drupal\Core\Form\FormStateInterface;
-// use Drupal\Core\StringTranslation\TranslatableMarkup;
-// use Drupal\Core\TypedData\DataDefinition;
-
 use Drupal\Core\TypedData\OptionsProviderInterface;
-use Drupal\options\Plugin\Field\FieldType\ListStringItem;
-
-
-
 
 /**
  * Plugin implementation of the 'list_view_mode' field type.
@@ -76,50 +58,40 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
     return $properties;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getPossibleOptions(AccountInterface $account = NULL) {
-
-
-    return $this->getOptions($this->getEntity());
-
-//    return array(
-//      'vm1' => 'VM 1',
-//      'vm2' => 'VM 2',
-//    );
-  }
-
-
-
-  public function getPossibleValues(AccountInterface $account = NULL) {
-    return $this->getValues($this->getEntity());
-  }
-
-  public function getSettableValues(AccountInterface $account = NULL) {
-    return $this->getValues($this->getEntity());
-
-
-//    // TODO: Implement getSettableValues() method.
-//    return array(
-//      'vm1',
-//      'vm2',
-//    );
-
-  }
-
-  public function getSettableOptions(AccountInterface $account = NULL) {
-
-    return $this->getOptions();
-//    return $this->getPossibleOptions($account);
-
-//    // TODO: Implement getSettableOptions() method.
-//    return array(
-//      'vm1' => 'VM 1',
-//      'vm2' => 'VM 2',
-//    );
-  }
-
-  protected function getValues(ContentEntityInterface $entity) {
     $options = $this->getOptions();
-    return array_keys($options);
+
+    foreach ($this->getSetting('view_modes') as $view_mode => $status) {
+      if (!$status) {
+        unset($options[$view_mode]);
+      }
+    }
+
+    return $options;    
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getPossibleValues(AccountInterface $account = NULL) {
+    return array_keys($this->getPossibleOptions($account));
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSettableValues(AccountInterface $account = NULL) {
+    return $this->getPossibleValues($account);
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getSettableOptions(AccountInterface $account = NULL) {
+    return $this->getPossibleOptions($account);
   }
 
   // @todo add support for entity_type
@@ -127,46 +99,13 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
     $entity_manager = \Drupal::entityManager();
     $entity_type = $this->getEntity()->getEntityType()->get('id');
 
-
     $view_modes_info = $entity_manager->getViewModes($entity_type);
-//    kint($view_modes_info);
-
-
-//    $config_prefix = 'core.entity_view_display';
-//    $entity_type_id = $entity->getEntityType()->id();
-//
-//    $ids = \Drupal::configFactory()->listAll($config_prefix . '.' . $entity_type_id . '.' . $entity->bundle() . '.');
-
-//    $load_ids = array();
-//    foreach ($ids as $id) {
-//      $config_id = str_replace($config_prefix . '.', '', $id);
-//      list(,, $display_mode) = explode('.', $config_id);
-//      $load_ids[] = $config_id;
-//    }
-
-    // dsm("HAHAH");
-
-//    kint($view_modes_info);
-
-
-    // $enabled_display_modes = array();
-    // $displays = $entity_manager->getStorage('entity_view_display')->loadMultiple($load_ids);
-    // foreach ($displays as $display) {
-    //   if ($display->status()) {
-    //     // kint($display);
-    //     $enabled_display_modes[] = $display->get('mode');
-    //   }
-    // }
-
-   // kint($enabled_display_modes);
 
     $options = array();
     foreach ($view_modes_info as $view_mode_name => $view_mode_info) {
       $options[$view_mode_name] = $view_mode_info['label'];
     }
     return $options;
-
-
   }
 
   /**
@@ -197,5 +136,18 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
     );
 
     return $element;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function fieldSettingsToConfigData(array $settings)
+  {
+    foreach ($settings['view_modes'] as $key => $status) {
+      if (!$status) {
+        unset($settings['view_modes'][$key]);
+      }
+    }
+    return $settings;
   }
 }
