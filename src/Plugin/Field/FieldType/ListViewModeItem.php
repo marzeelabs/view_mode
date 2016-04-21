@@ -10,6 +10,7 @@ namespace Drupal\view_mode\Plugin\Field\FieldType;
 use Drupal\Core\Entity\ContentEntityInterface;
 use Drupal\Core\Field\FieldItemBase;
 use Drupal\Core\Field\FieldStorageDefinitionInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\Core\TypedData\DataDefinition;
 
@@ -106,7 +107,7 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
 
   public function getSettableOptions(AccountInterface $account = NULL) {
 
-    return $this->getOptions($this->getEntity());
+    return $this->getOptions();
 //    return $this->getPossibleOptions($account);
 
 //    // TODO: Implement getSettableOptions() method.
@@ -117,45 +118,47 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
   }
 
   protected function getValues(ContentEntityInterface $entity) {
-    $options = $this->getOptions($entity);
+    $options = $this->getOptions();
     return array_keys($options);
   }
 
-  protected function getOptions(ContentEntityInterface $entity) {
+  // @todo add support for entity_type
+  protected function getOptions($entity_type = 'node') {
     $entity_manager = \Drupal::entityManager();
-//    $entity_type = $this->getEntity()->getEntityType()->get('id');
+    $entity_type = $this->getEntity()->getEntityType()->get('id');
 
-    $entity_type = $entity->getEntityType()->get('id');
 
     $view_modes_info = $entity_manager->getViewModes($entity_type);
+//    kint($view_modes_info);
 
-    $config_prefix = 'core.entity_view_display';
-    $entity_type_id = $entity->getEntityType()->id();
 
-    $ids = \Drupal::configFactory()->listAll($config_prefix . '.' . $entity_type_id . '.' . $entity->bundle() . '.');
+//    $config_prefix = 'core.entity_view_display';
+//    $entity_type_id = $entity->getEntityType()->id();
+//
+//    $ids = \Drupal::configFactory()->listAll($config_prefix . '.' . $entity_type_id . '.' . $entity->bundle() . '.');
 
-    $load_ids = array();
-    foreach ($ids as $id) {
-      $config_id = str_replace($config_prefix . '.', '', $id);
-      list(,, $display_mode) = explode('.', $config_id);
-      $load_ids[] = $config_id;
-    }
+//    $load_ids = array();
+//    foreach ($ids as $id) {
+//      $config_id = str_replace($config_prefix . '.', '', $id);
+//      list(,, $display_mode) = explode('.', $config_id);
+//      $load_ids[] = $config_id;
+//    }
 
-    dsm("HAHAH");
+    // dsm("HAHAH");
 
 //    kint($view_modes_info);
 
 
-    $enabled_display_modes = array();
-    $displays = $entity_manager->getStorage('entity_view_display')->loadMultiple($load_ids);
-    foreach ($displays as $display) {
-      if ($display->status()) {
-        kint($display);
-        $enabled_display_modes[] = $display->get('mode');
-      }
-    }
+    // $enabled_display_modes = array();
+    // $displays = $entity_manager->getStorage('entity_view_display')->loadMultiple($load_ids);
+    // foreach ($displays as $display) {
+    //   if ($display->status()) {
+    //     // kint($display);
+    //     $enabled_display_modes[] = $display->get('mode');
+    //   }
+    // }
 
-//    kint($enabled_display_modes);
+   // kint($enabled_display_modes);
 
     $options = array();
     foreach ($view_modes_info as $view_mode_name => $view_mode_info) {
@@ -166,5 +169,33 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
 
   }
 
+  /**
+   * {@inheritdoc}
+   */
+  public static function defaultFieldSettings() {
+    return array(
+      'view_modes' => array(),
+    ) + parent::defaultFieldSettings();
+  }
 
+  /**
+   * {@inheritdoc}
+   */
+  public function fieldSettingsForm(array $form, FormStateInterface $form_state) {
+
+    $element = array();
+
+    // @todo make this entity type agnostic
+    $entity_type = 'node';
+
+    $element['view_modes'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Enabled view modes'),
+      '#description' => t('Select the view modes that can be selected for this field.'),
+      '#default_value' => $this->getSetting('view_modes'),
+      '#options' => $this->getOptions($entity_type),
+    );
+
+    return $element;
+  }
 }
