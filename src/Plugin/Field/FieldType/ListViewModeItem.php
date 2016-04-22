@@ -63,15 +63,20 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
    */
   public function getPossibleOptions(AccountInterface $account = NULL) {
     $options = $this->getOptions();
-
+    
     $view_modes = $this->getSetting('view_modes');
-    foreach ($options as $key => $value) {
-      if (!isset($view_modes[$key])) {
-        unset($options[$key]);
+
+    $possible_options = array();
+    foreach ($options as $entity_type => $data) {
+      foreach ($data as $key => $value) {
+        if (isset($view_modes[$key])) {
+          $possible_options[$key] = $value;
+          unset($options[$key]);
+        }
       }
     }
 
-    return $options;    
+    return $possible_options;    
   }
 
   /**

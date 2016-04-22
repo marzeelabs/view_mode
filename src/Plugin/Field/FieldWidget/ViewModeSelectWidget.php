@@ -49,12 +49,12 @@ class ViewModeSelectWidget extends WidgetBase {
    */
   protected function getOptions(FieldableEntityInterface $entity) {
       // Limit the settable options for the current user account.
-      $options = $this->fieldDefinition
-        ->getFieldStorageDefinition()
-        ->getOptionsProvider('value', $entity)
-        ->getSettableOptions();
+    $options = $this->fieldDefinition
+      ->getFieldStorageDefinition()
+      ->getOptionsProvider('value', $entity)
+      ->getSettableOptions();
 
-      return $options;
+    return $options;
   }
 
 }
