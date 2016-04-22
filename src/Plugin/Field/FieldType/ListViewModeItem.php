@@ -100,17 +100,29 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
    * 
    * @return [type] [description]
    */
-  protected function getOptions() {
+  protected function getOptions($entity_type = NULL) {
     $entity_manager = \Drupal::entityManager();
-    $entity_type = $this->getEntity()->getEntityType()->get('id');
 
-    $view_modes_info = $entity_manager->getViewModes($entity_type);
+    if ($entity_type) {
+      $view_modes_info[$entity_type] = $entity_manager->getViewModes($entity_type);
+    }
+    else {
+      $view_modes_info = $entity_manager->getAllViewModes();
+    }
 
     $options = array();
-    foreach ($view_modes_info as $view_mode_name => $view_mode_info) {
-      $options[$view_mode_name] = $view_mode_info['label'];
+    foreach ($view_modes_info as $type => $data) {
+      foreach ($data as $view_mode_name => $view_mode_info) {
+        $options[$type][$view_mode_name] = $view_mode_info['label'];
+      }
     }
-    return $options;
+
+    if ($entity_type) {
+      return $options[$entity_type];
+    }
+    else {
+      return $options;
+    }
   }
 
   /**
@@ -129,16 +141,58 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
 
     $element = array();
 
-    $element['view_modes'] = array(
+    // $element['view_mode_entity'] = [
+    //   '#type' => 'select',
+    //   '#title' => t('Entity for which to select view modes'),
+    //   '#description' => t('Select the view modes that can be selected for this field.'),
+    //   '#default_value' => $this->getSetting('view_mode_entity'),
+    //   '#options' => array_keys($options),
+    //   '#ajax' => [
+    //     // 'callback' => '::selectEntityTypeCallback',
+    //     'callback' => ':selectEntityTypeCallback',
+    //     'wrapper' => 'view-mode-wrapper',
+    //   ]
+    // ];
+
+    $options = $this->getOptions();
+    foreach ($options as $entity_type => $data) {
+      foreach ($data as $key => $value) {
+        $flatten_options[$key] = $value;
+      }
+    }
+
+    $element['view_modes'] = [
       '#type' => 'checkboxes',
       '#title' => t('Enabled view modes'),
       '#description' => t('Select the view modes that can be selected for this field.'),
       '#default_value' => $this->getSetting('view_modes'),
-      '#options' => $this->getOptions(),
-    );
+      '#options' => $flatten_options,
+    ];
+
+    // $element['view_mode_wrapper'] = [
+    //   '#type' => 'container',
+    //   '#attributes' => ['id' => 'view-mode-wrapper'],
+    // ];
+
+    // Disable caching on this form.
+    // $form_state->setCached(FALSE);
 
     return $element;
   }
+
+  // public function selectEntityTypeCallback(array &$form, FormStateInterface $form_state) {
+  //   $entity_type = $form_state->getValue('view_mode_entity');
+
+  //   $form['view_mode_wrapper']['view_modes'] = [
+  //     '#type' => 'checkboxes',
+  //     '#title' => t('Enabled view modes'),
+  //     '#description' => t('Select the view modes that can be selected for this field.'),
+  //     '#default_value' => $this->getSetting('view_modes'),
+  //     '#options' => $this->getOptions($entity_type),
+  //   ];
+
+  //   return $form['view_mode_wrapper'];
+  // }
 
   /**
    * {@inheritdoc}
