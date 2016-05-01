@@ -106,7 +106,7 @@ class ListViewModeItem extends FieldItemBase implements OptionsProviderInterface
    * @return [type] [description]
    */
   protected function getOptions($entity_type = NULL) {
-    $entity_manager = \Drupal::entityManager();
+    $entity_manager = \Drupal::entityTypeManager();
 
     if ($entity_type) {
       $view_modes_info[$entity_type] = $entity_manager->getViewModes($entity_type);
